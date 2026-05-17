@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/config/seo.ts
 
 export const seoConfig = {
@@ -42,7 +43,7 @@ export const seoConfig = {
     ].join(", "),
     
     openGraph: {
-      type: "website",
+      type: "website" as const,
       locale: "bn_BD",
       alternateLocale: "en_US",
       url: process.env.NEXT_PUBLIC_APP_URL,
