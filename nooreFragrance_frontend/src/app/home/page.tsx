@@ -1,10 +1,12 @@
-import React from 'react';
+import HeroSection from "@/components/home/HeroSection";
+import Navbar from "@/components/shared/Navbar";
 
 const HomePage = () => {
     return (
-        <h1 className="text-3xl font-bold ">
-          dsfsf  
-        </h1>
+        <>
+        <Navbar />
+        <HeroSection />
+        </>
     );
 };
 

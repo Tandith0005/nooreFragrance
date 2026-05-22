@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { bodoniModa, hankenGrotesk } from "@/lib/fonts";
+
 import "./globals.css";
 import { seoConfig } from "@/config/seo";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
 
 export const metadata: Metadata = {
   title: {
@@ -42,17 +44,10 @@ export const metadata: Metadata = {
     },
   },
 
-  // Verification (add your actual verification codes)
-  // verification: {
-  //   google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION || '', // Add your Google Search Console code
-  //   // yandex: '', // Optional
-  //   // me: ['https://facebook.com/noorfragrance', 'https://instagram.com/noorfragrance'], // Optional
-  // },
-
   // Icons
   icons: {
     icon: "/logo.jpg",
-    shortcut: "/logo-16x16.jpg",
+    shortcut: "/logo.jpg",
     apple: "/logo.jpg",
   },
 
@@ -111,9 +106,17 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${bodoniModa.variable} ${hankenGrotesk.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
-        {children}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
         <JsonLd />
       </body>
     </html>

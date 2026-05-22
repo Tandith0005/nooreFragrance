@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // src/config/seo.ts
 
+import { EnvVars } from "@/lib/envVars";
+
 export const seoConfig = {
   // Site basics
   siteName: "NooréFragrance",
-  siteUrl: process.env.NEXT_PUBLIC_APP_URL || "https://noorfragrance.vercel.app", 
+  siteUrl: EnvVars.APP_URL || "https://noorfragrance.vercel.app", 
   siteLogo: "/logo.png",
   siteImage: "/logo.jpg",
   
@@ -46,7 +48,7 @@ export const seoConfig = {
       type: "website" as const,
       locale: "bn_BD",
       alternateLocale: "en_US",
-      url: process.env.NEXT_PUBLIC_APP_URL,
+      url: EnvVars.APP_URL,
       siteName: "NooréFragrance",
       title: "NooréFragrance - Premium Perfumes & Attars",
       description: "Discover authentic premium perfumes and traditional attars in Bangladesh. Shop genuine designer fragrances with COD, bkash, and card payment.",
@@ -155,9 +157,9 @@ export const seoConfig = {
     "@context": "https://schema.org",
     "@type": "OnlineStore",
     "name": "NooréFragrance",
-    "url": process.env.NEXT_PUBLIC_APP_URL,
-    "logo": `${process.env.NEXT_PUBLIC_APP_URL}/logo.png`,
-    "image": `${process.env.NEXT_PUBLIC_APP_URL}/logo.jpg`,
+    "url": EnvVars.APP_URL,
+    "logo": `${EnvVars.APP_URL}/logo.png`,
+    "image": `${EnvVars.APP_URL}/logo.jpg`,
     "description": "Authentic perfume and attar e-commerce platform in Bangladesh",
     "address": {
       "@type": "PostalAddress",
@@ -192,7 +194,7 @@ export const seoConfig = {
       "price": product.price,
       "priceCurrency": "BDT",
       "availability": product.inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-      "url": `${process.env.NEXT_PUBLIC_APP_URL}/products/${product.slug}`,
+      "url": `${EnvVars.APP_URL}/products/${product.slug}`,
       "priceValidUntil": new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
       "shippingDetails": {
         "@type": "OfferShippingDetails",
@@ -217,7 +219,7 @@ export const seoConfig = {
     "@type": "Organization",
     "name": seller.storeName,
     "description": `Authentic fragrance seller on NooréFragrance marketplace. Verified seller of premium perfumes and attars.`,
-    "url": `${process.env.NEXT_PUBLIC_APP_URL}/sellers/${seller.id}`,
+    "url": `${EnvVars.APP_URL}/sellers/${seller.id}`,
     "brand": {
       "@type": "Brand",
       "name": seller.storeName
@@ -238,7 +240,7 @@ export const seoConfig = {
       "@type": "ListItem",
       "position": index + 1,
       "name": item.name,
-      "item": `${process.env.NEXT_PUBLIC_APP_URL}${item.url}`
+      "item": `${EnvVars.APP_URL}${item.url}`
     }))
   })
 }

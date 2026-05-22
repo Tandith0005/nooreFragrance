@@ -1,7 +1,8 @@
+import { EnvVars } from "@/lib/envVars";
 import type { MetadataRoute } from "next";
 
 const baseUrl =
-  process.env.NEXT_PUBLIC_APP_URL || "https://noorfragrance.vercel.app";
+  EnvVars.APP_URL || "https://noorfragrance.vercel.app";
 
 export default function robots(): MetadataRoute.Robots {
   return {

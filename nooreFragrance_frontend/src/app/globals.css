@@ -1,33 +1,93 @@
 @import "tailwindcss";
 
 :root {
-  --background: #F9F7F2;
+  --background: #ffffff;
   --foreground: #171717;
+  --grid-color: rgba(26, 24, 22, 0.05);
+  --primary: #1A1A1A;
+  --secondary: #D4A85F;
+  --secondary-light: #8a8888;
   --font-heading: var(--font-bodoni-moda);
   --font-body: var(--font-hanken-grotesk);
+}
+
+.dark {
+  --background: #202020;
+  --foreground: #EDEDED;
+  --grid-color: rgba(255, 255, 255, 0.03);
+  --primary: #FFFFFF;
+  --secondary: #E9C176;
+  --secondary-light: #A89880;
+}
+.grid-bg {
+  background-image: 
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 100px 100px;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-secondary-light: var(--secondary-light);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    --background: #F9F7F2;
-    --foreground: #171717;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
+
+.text-primary {
+  color: var(--primary);
+}
+
+.text-secondary {
+  color: var(--secondary);
+}
+
+.text-secondary-light {
+  color: var(--secondary-light);
+}
+
 h1, h2, h3, .font-heading {
   font-family: var(--font-heading);
 }
+
 body, p, .font-body {
   font-family: var(--font-body);
+}
+
+/* For TV and large screens (4K+) */
+@media (min-width: 1920px) {
+  nav .max-w-7xl {
+    max-width: 1400px;
+  }
+  nav h1 {
+    font-size: 2.5rem;
+  }
+}
+
+/* For tablets landscape */
+@media (min-width: 768px) and (max-width: 1024px) {
+  nav .max-w-7xl {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+/* For mobile landscape */
+@media (min-width: 480px) and (max-width: 768px) {
+  nav h1 {
+    font-size: 1.25rem;
+  }
+}
+
+/* Smooth scrolling for mobile menu */
+.menu-open {
+  overflow: hidden;
 }
