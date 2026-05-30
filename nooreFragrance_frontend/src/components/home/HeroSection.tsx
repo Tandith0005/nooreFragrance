@@ -2,14 +2,15 @@
 "use client";
 
 import Link from "next/link";
-import React, { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FaLevelDownAlt } from "react-icons/fa";
-import {
-  useHeroAnimation,
-  useScrollHintBounce,
-  useFloatingPerfumeImages,
-} from "@/animations/HomeAnimation";
 import Image from "next/image";
+import {
+  useElegantFloat,
+  useFloatingPerfumeImages,
+  useHeroAnimation,
+  useTextFadeOnScroll,
+} from "@/animations/HomeAnimation";
 
 export default function LuxuryPerfumeHero() {
   // Create refs for animation targets
@@ -18,11 +19,41 @@ export default function LuxuryPerfumeHero() {
   const secondHeadingRef = useRef<HTMLHeadingElement>(null);
   const subtitleRef = useRef<HTMLParagraphElement>(null);
   const buttonsRef = useRef<HTMLDivElement>(null);
-  const scrollHintRef = useRef<HTMLDivElement>(null);
+  const textContainerRef = useRef<HTMLDivElement>(null);
 
   // Create refs for floating images (11 images total)
   const frontImageRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const searchbarRef = useRef<HTMLDivElement | null>(null);
   const backImageRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
+   const useIsMobile = () => {
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+      const check = () => setIsMobile(window.innerWidth < 768);
+      check();
+      window.addEventListener("resize", check);
+      return () => window.removeEventListener("resize", check);
+    }, []);
+
+    return isMobile;
+  };
+  const isMobile = useIsMobile();
+
+  // Add this useEffect after your hooks in LuxuryPerfumeHero.tsx
+useEffect(() => {
+  if (isMobile) {
+    // Force images to be visible on mobile by setting initial styles
+    frontImageRefs.current.forEach((img) => {
+      if (img) {
+        img.style.opacity = '1';
+        img.style.transform = 'translateY(0)';
+        img.style.visibility = 'visible';
+      }
+    });
+  }
+}, [isMobile]);
 
   // Apply animations
   useHeroAnimation({
@@ -31,17 +62,23 @@ export default function LuxuryPerfumeHero() {
     secondHeadingRef,
     subtitleRef,
     buttonsRef,
-    scrollHintRef,
   });
+  useTextFadeOnScroll({ containerRef, textContainerRef, searchbarRef });
 
-  // Apply continuous scroll hint bounce
-  useScrollHintBounce(scrollHintRef);
+  useElegantFloat({
+    refs: frontImageRefs,
+    containerRef,
+    disabled: isMobile,
+  });
 
   // Apply floating image animations
   useFloatingPerfumeImages({
     frontImageRefs,
     backImageRefs,
+    containerRef,
+    disabled: isMobile,
   });
+
 
   // Sample image paths - replace with your actual perfume bottle images
   const frontImages = [
@@ -52,92 +89,87 @@ export default function LuxuryPerfumeHero() {
     "/images/perfume (12).webp",
     "/images/perfume (20).webp",
   ];
+  const mobileFrontImages = isMobile? frontImages.slice(0, 2) : frontImages;
 
   const backImages = [
-    "/images/perfume (16).webp",
-    "/images/perfume (17).webp",
+    "/images/perfume (29).webp",
+    "/images/perfume (15).webp",
     "/images/perfume (18).webp",
     "/images/perfume (19).webp",
-    "/images/perfume (20).webp",
+    "/images/perfume (23).webp",
   ];
-
-  // Front image positions (6 images) - NO SCALE, NO ROTATE
-  const frontPositions = [
-    // LEFT SIDE
-    { top: "12%",   left: "15%",  hiddenOnMobile: true  }, // top-left      — hidden mobile
-    { top: "42%",   left: "10%",  hiddenOnMobile: false }, // middle-left   — VISIBLE mobile
-    { top: "68%",   left: "16%",  hiddenOnMobile: true  }, // lower-left    — hidden mobile
-    // RIGHT SIDE
-    { top: "8%",   right: "15%", hiddenOnMobile: true  }, // top-right     — hidden mobile
-    { top: "34%",   right: "10%", hiddenOnMobile: false }, // middle-right  — VISIBLE mobile
-    { bottom: "18%", right: "14%", hiddenOnMobile: true  }, // lower-right   — hidden mobile
-  ];
-
-  // Back image positions (5 images with depth) - NO SCALE, NO ROTATE, only positioning
-  const backPositions = [
-    { top: "5%", left: "-5%", opacity: 0.4, blur: "0px" },
-    { top: "30%", right: "-8%", opacity: 0.3, blur: "12px" },
-    { bottom: "-10%", left: "15%", opacity: 0.2, blur: "16px" },
-    { top: "60%", left: "-12%", opacity: 0.35, blur: "10px" },
-    { bottom: "20%", right: "-15%", opacity: 0.15, blur: "20px" },
-  ];
+  const mobileBackImages = isMobile ? [] : backImages;
 
   return (
-    <section className="relative min-h-screen w-full flex items-center justify-center overflow-hidden px-4 sm:px-6 selection:bg-[#E9C176]/30 selection:text-[#5A554E]">
+    <section
+      ref={containerRef}
+      className="relative min-h-screen w-full flex items-center justify-center overflow-visible px-4 sm:px-6 selection:bg-[#E9C176]/30 selection:text-[#5A554E]"
+    >
       {/* ───────────── FLOATING PERFUME IMAGES LAYER ───────────── */}
       {/* Front Images Layer - Higher z-index, fully visible */}
-      <div className="absolute inset-0 pointer-events-none z-[5]">
-        {frontImages.map((src, index) => (
-          <div
-            key={`front-${index}`}
-            ref={(el) => { frontImageRefs.current[index] = el; }}
-            className="absolute will-change-transform"
-            style={{
-              ...frontPositions[index],
-              filter: "drop-shadow(0 20px 30px rgba(0,0,0,0.15))",
-            }}
-          >
-            <div className="relative w-[120px] h-[120px] sm:w-[150px] sm:h-[150px] md:w-[180px] md:h-[180px]">
-              <Image
-                src={src}
-                alt={`Luxury perfume ${index + 1}`}
-                fill
-                className="object-contain"
-                sizes="(max-width: 640px) 120px, (max-width: 768px) 150px, 180px"
-                priority={index < 3}
-                quality={90}
-              />
-            </div>
+      <div className="absolute inset-0 pointer-events-none z-[5] overflow-visible">
+        <div className="absolute top-[15%] left-0 right-0 z-[5] pointer-events-none">
+          <div className="flex justify-center items-center gap-4 md:gap-8 px-4">
+            {mobileFrontImages.map((src, index) => (
+              <div
+                key={`front-${index}`}
+                ref={(el) => {
+                  frontImageRefs.current[index] = el;
+                }}
+                className="flex-shrink-0 translate-y-0"
+                style={{
+                  filter: "drop-shadow(0 20px 30px rgba(0,0,0,0.15))",
+                  willChange: "transform, opacity",
+                }}
+              >
+                <div className="relative w-[80px] h-[80px] sm:w-[100px] sm:h-[100px] md:w-[120px] md:h-[120px] lg:w-[150px] lg:h-[150px]">
+                  <Image
+                    src={src}
+                    alt={`Luxury perfume ${index + 1}`}
+                    fill
+                    className="object-contain"
+                    sizes="(max-width: 640px) 80px, (max-width: 768px) 100px, 120px"
+                    priority={index < 3}
+                    loading={index < 3 ? "eager" : "lazy"}
+                    quality={90}
+                  />
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
 
       {/* Background Images Layer - Behind everything */}
-      <div className="absolute inset-0 pointer-events-none z-0">
-        {backImages.map((src, index) => (
-          <div
-            key={`back-${index}`}
-            ref={(el) => { backImageRefs.current[index] = el; }}
-            className="absolute will-change-transform"
-            style={{
-              ...backPositions[index],
-              opacity: backPositions[index].opacity,
-              filter: `blur(${backPositions[index].blur}) drop-shadow(0 10px 20px rgba(0,0,0,0.1))`,
-            }}
-          >
-            <div className="relative w-[200px] h-[200px] sm:w-[250px] sm:h-[250px] md:w-[300px] md:h-[300px]">
-              <Image
-                src={src}
-                alt={`Distant perfume ${index + 1}`}
-                fill
-                className="object-contain"
-                sizes="(max-width: 640px) 200px, (max-width: 768px) 250px, 250px"
-                priority={false}
-                quality={70}
-              />
+      <div className="absolute top-[60%] inset-0 pointer-events-none z-0">
+        <div className="flex justify-center items-center gap-4 md:gap-8 px-4">
+          {mobileBackImages.map((src, index) => (
+            <div
+              key={`back-${index}`}
+              ref={(el) => {
+                backImageRefs.current[index] = el;
+              }}
+              className="flex-shrink-0 "
+              style={{
+                filter: `drop-shadow(0 10px 20px rgba(0,0,0,0.1))`,
+                willChange: "transform, opacity",
+              }}
+            >
+              <div className="relative w-[200px] h-[200px] sm:w-[250px] sm:h-[250px] md:w-[150px] md:h-[150px]">
+                <Image
+                  src={src}
+                  alt={`Distant perfume ${index + 1}`}
+                  fill
+                  className="object-contain"
+                  sizes="(max-width: 640px) 200px, (max-width: 768px) 250px, 250px"
+                  priority={false}
+                  loading="lazy"
+                  quality={70}
+                />
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {/* ───────────── SUBTLE GRID BACKGROUND (Global) ───────────── */}
@@ -154,7 +186,10 @@ export default function LuxuryPerfumeHero() {
       </div>
 
       {/* Content Container - High z-index */}
-      <div className="relative z-20 w-full max-w-4xl mx-auto text-center px-4 sm:px-6">
+      <div
+        ref={textContainerRef}
+        className="relative z-20 w-full max-w-4xl mx-auto text-center px-4 sm:px-6"
+      >
         <div className="relative z-10 space-y-6 sm:space-y-8">
           {/* Luxury Badge */}
           <span
@@ -172,7 +207,10 @@ export default function LuxuryPerfumeHero() {
           >
             Perfume That Speaks
           </h1>
-          <h2 ref={secondHeadingRef} className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight leading-[1.1] bg-gradient-to-r from-[#B8943E] to-[#D4A85F] bg-clip-text text-transparent dark:from-[#D4A85F] dark:to-[#E9C176]">
+          <h2
+            ref={secondHeadingRef}
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight leading-[1.1] bg-gradient-to-r from-[#B8943E] to-[#D4A85F] bg-clip-text text-transparent dark:from-[#D4A85F] dark:to-[#E9C176]"
+          >
             Before You Do
           </h2>
 
@@ -197,14 +235,32 @@ export default function LuxuryPerfumeHero() {
               </button>
             </Link>
 
-            <div
-              ref={scrollHintRef}
-              className="flex flex-row justify-center items-center gap-2"
-            >
+            <div className="flex flex-row justify-center items-center gap-2">
               Scroll Down
               <FaLevelDownAlt size={16} />
             </div>
           </div>
+        </div>
+      </div>
+      {/* Search Bar */}
+      <div
+        ref={(el) => {
+          searchbarRef.current = el;
+        }}
+        className={`fixed bottom-10  left-1/2 top-[40%] transform -translate-x-1/2 z-20
+          
+          `}
+      >
+        {/* ${showInput ? 'opacity-100 translate-y-0 visible' : 'opacity-0 translate-y-20 invisible'} */}
+        <div className="bg-white/90 backdrop-blur-md rounded-full p-1 shadow-2xl dark:bg-black/80">
+          <input
+            type="email"
+            placeholder="Search for Perfume..."
+            className="px-20 py-5 rounded-full bg-transparent text-[#5A554E] dark:text-[#B0A898] placeholder:text-[#5A554E]/50 dark:placeholder:text-[#B0A898]/50 focus:outline-none min-w-[280px] sm:min-w-[320px]"
+          />
+          <button className="px-6 py-2 rounded-full bg-gradient-to-r from-[#C9973E] to-[#D4A85F] text-white font-medium hover:shadow-lg transition-all duration-300">
+            Search
+          </button>
         </div>
       </div>
     </section>

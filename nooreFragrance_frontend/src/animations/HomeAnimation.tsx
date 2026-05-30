@@ -1,22 +1,39 @@
-// src/animations/HomeAnimation.tsx
+
 "use client";
 
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { SplitText } from "gsap/SplitText";
 import React, { useRef } from "react";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(SplitText);
+  gsap.registerPlugin(ScrollTrigger);
 }
 
+const getElementPosition = (el: HTMLElement) => {
+  const rect = el.getBoundingClientRect();
+  return {
+    left: rect.left,
+    top: rect.top,
+    right: rect.right,
+    bottom: rect.bottom,
+    width: rect.width,
+    height: rect.height,
+    centerX: rect.left + rect.width / 2,
+    centerY: rect.top + rect.height / 2,
+  };
+};
+
+
+// Text coming animation----------------------------------------------------------------------
 interface HeroAnimationProps {
   badgeRef: React.RefObject<HTMLElement | null>;
   headingRef: React.RefObject<HTMLHeadingElement | null>;
   secondHeadingRef: React.RefObject<HTMLHeadingElement | null>;
   subtitleRef: React.RefObject<HTMLParagraphElement | null>;
   buttonsRef: React.RefObject<HTMLDivElement | null>;
-  scrollHintRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export const useHeroAnimation = ({
@@ -25,7 +42,6 @@ export const useHeroAnimation = ({
   secondHeadingRef,
   subtitleRef,
   buttonsRef,
-  scrollHintRef,
 }: HeroAnimationProps) => {
   useGSAP(
     () => {
@@ -113,16 +129,6 @@ export const useHeroAnimation = ({
         );
       }
 
-      // 5. Scroll Hint
-      if (scrollHintRef.current) {
-        tl.fromTo(
-          scrollHintRef.current,
-          { opacity: 0, y: 25 },
-          { opacity: 0.75, y: 0, duration: 0.7 },
-          "-=0.3",
-        );
-      }
-
       return () => {
         splitHeading?.revert();
       };
@@ -131,88 +137,340 @@ export const useHeroAnimation = ({
   );
 };
 
-export const useScrollHintBounce = (
-  scrollHintRef: React.RefObject<HTMLElement | null>,
-) => {
-  useGSAP(() => {
-    if (scrollHintRef.current) {
-      gsap.to(scrollHintRef.current, {
-        y: 8,
-        duration: 1.4,
-        repeat: -1,
-        yoyo: true,
-        ease: "power1.inOut",
-        delay: 2.8,
+
+// Text Fade On Scroll animation ---------------------------------------------------------------------------
+interface TextFadeOutProps {
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  textContainerRef: React.RefObject<HTMLDivElement | null>;
+  searchbarRef: React.RefObject<HTMLDivElement | null>;
+}
+
+export const useTextFadeOnScroll = ({
+  containerRef,
+  textContainerRef,
+  searchbarRef,
+}: TextFadeOutProps) => {
+  useGSAP(
+    () => {
+      if (!containerRef.current || !textContainerRef.current) return;
+
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: containerRef.current,
+          start: "top top",
+          end: "+=600",
+          scrub: 1,
+        },
       });
-    }
-  }, [scrollHintRef]);
+
+      // Fade out the entire text container as user scrolls
+      tl.to(textContainerRef.current, {
+        opacity: 0,
+        y: -80, // Move up while fading
+        ease: "power2.out",
+      });
+
+      // Fade in the searchbar
+      tl.fromTo(
+        searchbarRef.current,
+        {
+          opacity: 0,
+        },
+        {
+          opacity: 1,
+          ease: "power2.out",
+        },
+        "<",
+      );
+
+      return () => {
+        tl.scrollTrigger?.kill(); 
+        tl.kill(); 
+        tl.revert(); 
+      };
+    },
+    { dependencies: [containerRef, textContainerRef, searchbarRef] },
+  );
 };
 
+//  Floating Images animation for perfume images ------------------------------------------------------------
+interface ElegantFloatProps {
+  refs: React.RefObject<(HTMLDivElement | null)[]>;
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  disabled?: boolean;
+}
+
+export const useElegantFloat = ({ refs, containerRef, disabled  }: ElegantFloatProps) => {
+  useGSAP(() => {
+    if (!containerRef.current) return;
+    if (disabled) return;
+    let animations: gsap.core.Tween[] = [];
+
+    const createAnimations = () => {
+      animations = [];
+
+      refs.current.forEach((img, index) => {
+        if (!img) return;
+
+        const tween = gsap.to(img, {
+          y: ["+=8", "-=6", "+=10", "-=7", "+=5", "-=9"][index % 6],
+          duration: [1.5, 2, 3, 2, 4.5, 1.2][index % 6],
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+        });
+
+        animations.push(tween);
+      });
+    };
+
+    createAnimations();
+
+    const st = ScrollTrigger.create({
+      trigger: containerRef.current,
+      start: "top top",
+      end: "bottom top",
+
+      onUpdate: (self) => {
+        if (self.progress > 0.02) {
+          // HARD KILL (not pause)
+          animations.forEach((anim) => anim.kill());
+          animations = [];
+        }
+
+        if (self.progress <= 0.02 && animations.length === 0) {
+          // recreate when back to top
+          createAnimations();
+        }
+      },
+    });
+
+    return () => {
+      animations.forEach((anim) => anim.kill());
+      st.kill();
+    };
+  }, []);
+};
+
+// ScrollTrigger animation for floating perfume images ------------------------------------------------------------
 interface FloatingImagesProps {
   frontImageRefs: React.RefObject<(HTMLDivElement | null)[]>;
   backImageRefs: React.RefObject<(HTMLDivElement | null)[]>;
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  disabled?: boolean;
 }
 
 export const useFloatingPerfumeImages = ({
   frontImageRefs,
   backImageRefs,
+  containerRef,
+  disabled
 }: FloatingImagesProps) => {
   useGSAP(
     () => {
-      // Different movement configurations for each front image
-      const frontMovements = [
-        { y: 25, duration: 6, delay: 0 },
-        { y: -20, duration: 7, delay: 0.5 },
-        { y: 30, duration: 5.5, delay: 1 },
-        { y: -25, duration: 6.5, delay: 0.3 },
-        { y: 22, duration: 7.5, delay: 0.8 },
-        { y: -28, duration: 5.8, delay: 1.2 },
-      ];
+      if (!containerRef.current || disabled) return;
 
-      // Different movement configurations for back images (slower, more subtle)
-      const backMovements = [
-        { y: 15, duration: 11, delay: 0 },
-        { y: -12, duration: 13, delay: 0.7 },
-        { y: 18, duration: 10.5, delay: 1.2 },
-        { y: -14, duration: 12, delay: 0.4 },
-        { y: 16, duration: 11.5, delay: 0.9 },
-      ];
+      // Pre-calculate ALL positions BEFORE creating timeline
+      const calculatePositions = () => {
+        const positions = {
+          // Front images
+          front0: null as { x: number; y: number } | null,
+          front1: null as { x: number; y: number } | null,
+          front2: null as { x: number; y: number } | null,
+          front3: null as { x: number; y: number } | null,
+          front4: null as { x: number; y: number } | null,
+          front5: null as { x: number; y: number } | null,
+          // Back images
+          back0: null as { x: number; y: number } | null,
+          back1: null as { x: number; y: number } | null,
+          back2: null as { x: number; y: number } | null,
+          back3: null as { x: number; y: number } | null,
+        };
 
-      // Animate front images (6 images)
-      frontImageRefs.current.forEach((img, index) => {
-        if (!img) return;
+        const img0 = frontImageRefs.current[0];
+        if (img0) {
+          const rect = getElementPosition(img0);
+          positions.front0 = { x: 250 - rect.left, y: 200 - rect.top };
+        }
 
-        const movement = frontMovements[index % frontMovements.length];
+        const img1 = frontImageRefs.current[1];
+        if (img1) {
+          const rect = getElementPosition(img1);
+          const centerX = window.innerWidth / 2;
+          positions.front1 = { x: centerX - rect.left, y: 20 - rect.top };
+        }
 
-        // Create a master timeline for each image
-        gsap.to(img, {
-          y: movement.y,
-          duration: movement.duration,
-          repeat: -1,
-          yoyo: true,
-          ease: "sine.inOut",
-          delay: movement.delay,
-        });
+        const img2 = frontImageRefs.current[2];
+        if (img2) {
+          const rect = getElementPosition(img2);
+          const rightPosition = window.innerWidth - rect.width - 250;
+          positions.front2 = { x: rightPosition - rect.left, y: 200 - rect.top };
+        }
+
+        const img3 = frontImageRefs.current[3];
+        if (img3) {
+          const rect = getElementPosition(img3);
+          const bottomPosition = window.innerHeight - rect.height - 150;
+          positions.front3 = { x: 350 - rect.left, y: bottomPosition - rect.top };
+        }
+
+        const img4 = frontImageRefs.current[4];
+        if (img4) {
+          positions.front4 = { x: 0, y: 0 }; // Opacity only, no movement
+        }
+
+        const img5 = frontImageRefs.current[5];
+        if (img5) {
+          const rect = getElementPosition(img5);
+          const rightPosition = window.innerWidth - rect.width - 20;
+          const bottomPosition = window.innerHeight - rect.height - 100;
+          positions.front5 = { x: rightPosition - rect.left, y: bottomPosition - rect.top };
+        }
+
+        // Back images
+        const back0 = backImageRefs.current[0];
+        if (back0) {
+          const rect = getElementPosition(back0);
+          positions.back0 = { x: 20 - rect.left, y: 20 - rect.top };
+        }
+
+        const back1 = backImageRefs.current[1];
+        if (back1) {
+          const rect = getElementPosition(back1);
+          const centerX = window.innerWidth / 2 - 200;
+          positions.back1 = { x: centerX - rect.left, y: 1 - rect.top };
+        }
+
+        const back2 = backImageRefs.current[2];
+        if (back2) {
+          const rect = getElementPosition(back2);
+          const rightPosition = window.innerWidth - rect.width - 20;
+          positions.back2 = { x: rightPosition - rect.left, y: 20 - rect.top };
+        }
+
+        const back3 = backImageRefs.current[3];
+        if (back3) {
+          const rect = getElementPosition(back3);
+          const bottomPosition = window.innerHeight - rect.height;
+          positions.back3 = { x: 20 - rect.left, y: bottomPosition - rect.top };
+        }
+
+        return positions;
+      };
+
+      const positions = calculatePositions();
+
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: containerRef.current,
+          start: "top top",
+          end: "+=1300",
+          scrub: 1,
+          pin: true,
+          snap: {
+            snapTo: [0, 1],
+            duration: 0.4,
+            ease: "power1.inOut",
+          },
+        },
       });
 
-      // Animate back images (5 images) - slower, more subtle
-      backImageRefs.current.forEach((img, index) => {
-        if (!img) return;
-        const movement = backMovements[index % backMovements.length];
-        
-        gsap.to(img, {
-          y: movement.y,
-          duration: movement.duration,
-          repeat: -1,
-          yoyo: true,
-          ease: "sine.inOut",
-          delay: movement.delay,
+      // Use pre-calculated positions
+      if (positions.front0) {
+        tl.from(frontImageRefs.current[0], {
+          x: positions.front0.x,
+          y: positions.front0.y,
+          duration: 1,
         });
-      });
+      }
 
-      // Cleanup function
+      if (positions.front1) {
+        tl.from(frontImageRefs.current[1], {
+          x: positions.front1.x,
+          y: positions.front1.y,
+          duration: 1,
+        }, "<");
+      }
+
+      if (positions.front2) {
+        tl.from(frontImageRefs.current[2], {
+          x: positions.front2.x,
+          y: positions.front2.y,
+          duration: 1,
+        }, "<");
+      }
+
+      if (positions.front3) {
+        tl.from(frontImageRefs.current[3], {
+          x: positions.front3.x,
+          y: positions.front3.y,
+          duration: 1,
+        }, "<");
+      }
+
+      tl.from(frontImageRefs.current[4], {
+        opacity: 0,
+        duration: 1,
+      }, "<");
+
+      if (positions.front5) {
+        tl.from(frontImageRefs.current[5], {
+          x: positions.front5.x,
+          y: positions.front5.y,
+          duration: 1,
+        }, "<");
+      }
+
+      // Back images
+      if (positions.back0) {
+        tl.from(backImageRefs.current[0], {
+          x: positions.back0.x,
+          y: positions.back0.y,
+          duration: 1,
+          opacity: 0.3,
+          scale: 0.9,
+        }, "<");
+      }
+
+      if (positions.back1) {
+        tl.from(backImageRefs.current[1], {
+          x: positions.back1.x,
+          y: positions.back1.y,
+          duration: 1,
+          opacity: 0.15,
+          scale: 0.85,
+        }, "<");
+      }
+
+      if (positions.back2) {
+        tl.from(backImageRefs.current[2], {
+          x: positions.back2.x,
+          y: positions.back2.y,
+          duration: 1,
+          opacity: 0.2,
+          scale: 0.9,
+        }, "<");
+      }
+
+      if (positions.back3) {
+        tl.from(backImageRefs.current[3], {
+          x: positions.back3.x,
+          y: positions.back3.y,
+          duration: 1,
+          opacity: 0.35,
+          scale: 0.75,
+        }, "<");
+      }
+
+      tl.from(backImageRefs.current[4], {
+        opacity: 0.4,
+        duration: 1,
+        scale: 0.6,
+      }, "<");
+
       return () => {
-        // Kill all animations on unmount
+        tl.scrollTrigger?.kill();
+        tl.kill();
         frontImageRefs.current.forEach((img) => {
           if (img) gsap.killTweensOf(img);
         });
@@ -221,6 +479,6 @@ export const useFloatingPerfumeImages = ({
         });
       };
     },
-    { dependencies: [frontImageRefs, backImageRefs] },
+    { dependencies: [disabled, containerRef] }, // Recalculate when disabled changes
   );
 };
