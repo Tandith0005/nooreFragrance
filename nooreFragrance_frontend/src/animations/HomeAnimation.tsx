@@ -367,6 +367,7 @@ export const useFloatingPerfumeImages = ({
           end: "+=1300",
           scrub: 1,
           pin: true,
+          pinSpacing: true,
           snap: {
             snapTo: [0, 1],
             duration: 0.4,
@@ -482,3 +483,103 @@ export const useFloatingPerfumeImages = ({
     { dependencies: [disabled, containerRef] }, // Recalculate when disabled changes
   );
 };
+
+
+// ScrollTrigger animation for Features Perfumes ------------------------------------------------------------
+
+interface FeaturesAnimationProps {
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  itemRefs: React.RefObject<(HTMLDivElement | null)[]>;
+}
+
+export const useFeaturesAnimation = ({
+  containerRef,
+  itemRefs,
+}: FeaturesAnimationProps) => {
+  useGSAP(() => {
+    if (!containerRef.current) return;
+
+    const items = itemRefs.current.filter(Boolean);
+
+    // initial state (soft + elegant)
+    gsap.set(items, {
+      opacity: 0,
+      y: 60,
+      scale: 0.95,
+    });
+
+    const tl = gsap.timeline({
+      scrollTrigger: {
+        trigger: containerRef.current,
+        start: "top 80%",
+        end: "top 30%",
+        toggleActions: "play none none reverse",
+      },
+    });
+
+    tl.to(items, {
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      duration: 1.2,
+      ease: "power3.out",
+      stagger: {
+        amount: 0.8,
+        from: "random", // gives natural luxury feel
+      },
+    });
+
+    return () => {
+      tl.kill();
+      ScrollTrigger.getAll().forEach((t) => t.kill());
+    };
+  }, []);
+};
+
+interface ParallaxProps {
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  itemRefs: React.RefObject<(HTMLDivElement | null)[]>;
+}
+
+export const useFeaturesParallax = ({
+  containerRef,
+  itemRefs,
+}: ParallaxProps) => {
+  useGSAP(() => {
+    if (!containerRef.current) return;
+
+    const items = itemRefs.current.filter(Boolean);
+
+    items.forEach((el, index) => {
+      if (!el) return;
+
+     
+      const depth = (index % 5) + 1; 
+      const movement = depth * 15; 
+
+      gsap.fromTo(
+        el,
+        {
+          y: 0,
+        },
+        {
+          y: movement,
+          ease: "none",
+          scrollTrigger: {
+            trigger: containerRef.current,
+            start: "top bottom",
+            end: "bottom top",
+            scrub: 1 + index * 0.1, 
+          },
+        }
+      );
+    });
+
+    return () => {
+      ScrollTrigger.getAll().forEach((t) => t.kill());
+    };
+  }, []);
+};
+
+
+
