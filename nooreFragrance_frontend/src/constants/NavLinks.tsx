@@ -1,9 +1,9 @@
-import { HiOutlineShoppingBag, HiOutlineHeart, HiOutlineUser } from "react-icons/hi";
+import { HiOutlineShoppingBag, HiOutlineHeart, HiOutlineUser, HiMail } from "react-icons/hi";
 
 export const navLinks = [
   { href: "/shop", label: "Shop", icon: <HiOutlineShoppingBag className="w-4 h-4" /> },
-  { href: "/collection", label: "Collection", icon: <HiOutlineHeart className="w-4 h-4" /> },
-  { href: "/about", label: "About", icon: null },
+  { href: "/about", label: "About", icon: <HiOutlineHeart className="w-4 h-4" /> },
+  { href: "/contact", label: "Contact", icon: <HiMail /> },
 ];
 
 export const navAuthLinks = [

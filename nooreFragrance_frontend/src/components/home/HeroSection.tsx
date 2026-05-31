@@ -27,6 +27,14 @@ export default function LuxuryPerfumeHero() {
   const backImageRefs = useRef<(HTMLDivElement | null)[]>([]);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
+  useEffect(() => {
+  window.scrollTo({
+    top: 0,
+    left: 0,
+    behavior: "instant",
+  });
+}, []);
+
    const useIsMobile = () => {
     const [isMobile, setIsMobile] = useState(false);
 

@@ -15,7 +15,7 @@ const HomePage = () => {
         <Features />
         {/* Brand Numbers */}
         <BrandNumbers />
-
+        {/* Footer */}
         <Footer />
         </>
     );
