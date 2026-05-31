@@ -108,7 +108,7 @@ export default function RootLayout({
       className={`${bodoniModa.variable} ${hankenGrotesk.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-[250%] flex flex-col">
+      <body className=" flex flex-col">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
