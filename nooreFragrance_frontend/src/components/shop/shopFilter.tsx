@@ -293,8 +293,7 @@ const ShopFilter = () => {
       priceRange,
       sortBy
     });
-    // Here you would typically pass these filters to a parent component
-    // or dispatch a state update to filter the products
+    
     setIsMobileFilterOpen(false); // Close mobile sidebar after applying
   };
 
