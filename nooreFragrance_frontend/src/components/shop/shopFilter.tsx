@@ -17,7 +17,7 @@ interface FilterContentProps {
   handleGenderChange: (gender: string) => void;
   handlePriceChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   setPriceRange: React.Dispatch<React.SetStateAction<[number, number]>>;
-  setSortBy: (value: string) => void;  // Add this prop
+  setSortBy: (value: string) => void;  
   applyFilters: () => void;
   clearAllFilters: () => void;
 }

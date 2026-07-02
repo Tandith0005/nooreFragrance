@@ -1,17 +1,19 @@
 import { Router } from "express";
 import passport from "passport";
+import { AuthController } from "./auth.controller";
+import { authenticateJWT } from "../../middlewares/auth.middleware";
+
 
 const router = Router();
 
-router.get("/login", passport.authenticate('google', { scope: ['email', 'profile'] }));
+// Passport google login
+router.get("/login", passport.authenticate('google', { scope: ['email', 'profile'], session: false }));
+router.get("/google/callback", passport.authenticate('google', { failureRedirect: '/login', session: false }), AuthController.googleCallback);
 
-router.get("/google/callback", passport.authenticate('google', { failureRedirect: '/login' }), (req, res) => {
-    res.redirect('/');
-});
-
-
-
-
+// Protected routes
+router.post("/logout", authenticateJWT, AuthController.logout);
+router.get("/me", authenticateJWT, AuthController.getCurrentUser);
+router.post("/refresh", AuthController.refreshAccessToken); // No auth needed for refresh
 
 
 export const AuthRoutes = router;
