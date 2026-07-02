@@ -13,7 +13,7 @@ router.get("/google/callback", passport.authenticate('google', { failureRedirect
 // Protected routes
 router.post("/logout", authenticateJWT, AuthController.logout);
 router.get("/me", authenticateJWT, AuthController.getCurrentUser);
-router.post("/refresh", AuthController.refreshAccessToken); // No auth needed for refresh
+router.post("/refresh", AuthController.refreshAccessToken); 
 
 
 export const AuthRoutes = router;

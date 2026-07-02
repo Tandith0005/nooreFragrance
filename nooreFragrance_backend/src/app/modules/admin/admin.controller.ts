@@ -1,26 +1,23 @@
 import { Request, Response } from "express";
 import { logger } from "../../utils/logger";
 import { cleanupExpiredTokensFully } from "../../jobs/token-cleanup.job";
+import { catchAsync } from "../../utils/catchAsync";
+import { sendResponse } from "../../utils/sendResponse";
 
-export const triggerTokenCleanup = async (req: Request, res: Response) => {
-  try {
-    logger.log("Manual token cleanup triggered by admin");
-    await cleanupExpiredTokensFully();
-    
-    res.json({
-      success: true,
-      message: "Token cleanup completed successfully",
+const triggerTokenCleanup = catchAsync(async (req: Request, res: Response) => {
+  logger.log("Manual token cleanup triggered by admin");
+
+  await cleanupExpiredTokensFully();
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Token cleanup completed successfully",
+    data: {
       timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    logger.error("Manual cleanup failed:", error);
-    res.status(500).json({
-      success: false,
-      message: "Token cleanup failed",
-      error: error instanceof Error ? error.message : "Unknown error"
-    });
-  }
-};
+    }
+  });
+});
 
 export const AdminController = {
   triggerTokenCleanup,

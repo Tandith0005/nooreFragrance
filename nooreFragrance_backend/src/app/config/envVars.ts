@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import AppError from "../utils/appError";
 
 dotenv.config();
 
@@ -28,7 +29,7 @@ const loadEnvVars = (): EnvConfig => {
 
     requireEnvVariable.forEach((envVar) => {
         if (!process.env[envVar]) {
-            throw new Error(`Missing environment variable: ${envVar}`);
+           throw new AppError(`Missing environment variable: ${envVar}`, 500);
         }
     });
 

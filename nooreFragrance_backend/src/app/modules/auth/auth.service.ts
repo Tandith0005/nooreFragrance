@@ -3,15 +3,17 @@ import { IUser, User } from "../../models";
 import { TokenService } from "../../services/token.service";
 import { Types } from "mongoose";
 import { logger } from "../../utils/logger";
+import AppError from "../../utils/appError";
+import { IAuthResponse, IGoogleProfile, ILogoutPayload, IRefreshTokenPayload } from "./auth.types";
 
 // Handle Google authentication
-const handleGoogleAuth = async (profile: any, req: any): Promise<any> => {
+const handleGoogleAuth = async (profile: IGoogleProfile, req: any): Promise<IAuthResponse> => {
   try {
     const email = profile.emails?.[0]?.value;
     const googleId = profile.id;
 
     if (!email) {
-      throw new Error("No email found from Google");
+      throw new AppError("No email found from Google", 400);
     }
 
     // 1. Check if user exists by email OR googleId
@@ -61,7 +63,7 @@ const handleGoogleAuth = async (profile: any, req: any): Promise<any> => {
     }
 
     if (!user) {
-      throw new Error("User not found after authentication");
+      throw new AppError("User not found after authentication", 400);
     }
 
     // 4. Generate JWT tokens
@@ -100,7 +102,7 @@ const handleGoogleAuth = async (profile: any, req: any): Promise<any> => {
 };
 
 // Logout user
-const logout = async (userId: string, refreshToken: string): Promise<void> => {
+const logout = async ({userId, refreshToken} : ILogoutPayload): Promise<void> => {
   await User.updateOne(
     { _id: new Types.ObjectId(userId) },
     {
@@ -112,7 +114,7 @@ const logout = async (userId: string, refreshToken: string): Promise<void> => {
 };
 
 // Refresh access token
-const refreshAccessToken = async (refreshToken: string): Promise<any> => {
+const refreshAccessToken = async ({refreshToken}: IRefreshTokenPayload): Promise<any> => {
   // Find user with valid refresh token
   const user = await User.findOne({
     "refreshTokens.token": refreshToken,
@@ -120,7 +122,7 @@ const refreshAccessToken = async (refreshToken: string): Promise<any> => {
   });
 
   if (!user) {
-    throw new Error("Invalid or expired refresh token");
+    throw new AppError("Invalid or expired refresh token", 401);
   }
 
   // Verify refresh token is still valid
@@ -130,7 +132,7 @@ const refreshAccessToken = async (refreshToken: string): Promise<any> => {
   });
 
   if (!isValid) {
-    throw new Error("Refresh token expired or invalid");
+    throw new AppError("Refresh token expired or invalid", 401);
   }
 
   // Generate new access token

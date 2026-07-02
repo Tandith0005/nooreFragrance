@@ -1,5 +1,7 @@
 import { Router } from "express";
 import { authenticateJWT } from "../../middlewares/auth.middleware";
+import { authorizeRoles } from "../../middlewares/authorizeRole";
+import { AdminController } from "./admin.controller";
 
 const router = Router();
 

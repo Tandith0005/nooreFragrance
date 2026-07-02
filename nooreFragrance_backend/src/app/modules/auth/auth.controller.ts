@@ -1,141 +1,130 @@
-// app/modules/auth/auth.controller.ts
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { envVars } from "../../config/envVars";
 import { TokenService } from "../../services/token.service";
 import { AuthService } from "./auth.service";
+import { catchAsync } from "../../utils/catchAsync";
+import { sendResponse } from "../../utils/sendResponse";
+import { IAuthResponse } from "./auth.types";
 
+// Google Callback
 const googleCallback = (req: Request, res: Response) => {
-  const authData = req.user as any;
+  const authData = req.user as IAuthResponse;
 
   if (authData && authData.accessToken && authData.refreshToken) {
-    // Set ACCESS TOKEN as HTTP-only cookie (short-lived)
     res.cookie("access_token", authData.accessToken, {
       httpOnly: true,
       secure: envVars.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 15 * 60 * 1000, // 15 minutes
+      maxAge: 15 * 60 * 1000,
     });
 
-    // Set REFRESH TOKEN as HTTP-only cookie (long-lived)
     res.cookie("refresh_token", authData.refreshToken, {
       httpOnly: true,
       secure: envVars.NODE_ENV === "production",
       sameSite: "lax",
-      path: "/api/v1/auth/refresh", // Only sent to refresh endpoint
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
-
-    // Redirect to frontend
-    res.redirect(`${envVars.APP_URL}/dashboard`);
-  } else {
-    res.redirect("/login");
-  }
-};
-
-const logout = async (req: Request, res: Response) => {
-  try {
-    const refreshToken = req.cookies.refresh_token;
-    const accessToken = req.cookies.access_token;
-
-    // Get user ID from access token
-    if (accessToken) {
-      const decoded = TokenService.verifyAccessToken(accessToken);
-      if (decoded && decoded.userId) {
-        // Remove refresh token from database
-        if (refreshToken) {
-          await AuthService.logout(decoded.userId, refreshToken);
-        }
-      }
-    }
-
-    // Clear cookies
-    res.clearCookie("access_token", {
-      httpOnly: true,
-      secure: envVars.NODE_ENV === "production",
-      sameSite: "lax",
-    });
-    res.clearCookie("refresh_token", {
-      httpOnly: true,
-      secure: envVars.NODE_ENV === "production",
-      sameSite: "lax",
       path: "/api/v1/auth/refresh",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    res.json({ success: true, message: "Logged out successfully" });
-  } catch (error) {
-    console.error("Logout error:", error);
-    res.status(500).json({ success: false, message: "Logout failed" });
+    return res.redirect(`${envVars.APP_URL}/dashboard`);
   }
+
+  res.redirect("/login");
 };
 
-const refreshAccessToken = async (req: Request, res: Response) => {
-  try {
-    const refreshToken = req.cookies.refresh_token;
+// Logout
+const logout = catchAsync(async (req: Request, res: Response) => {
+  const refreshToken = req.cookies.refresh_token;
+  const accessToken = req.cookies.access_token;
 
-    if (!refreshToken) {
-      return res.status(401).json({
-        success: false,
-        message: "Refresh token not found",
+  if (accessToken) {
+    const decoded = TokenService.verifyAccessToken(accessToken);
+    if (decoded?.userId && refreshToken) {
+      await AuthService.logout({
+        userId: decoded.userId,
+        refreshToken,
       });
     }
+  }
 
-    // Generate new access token
-    const newAccessToken = await AuthService.refreshAccessToken(refreshToken);
+  // Clear cookies
+  res.clearCookie("access_token", {
+    httpOnly: true,
+    secure: envVars.NODE_ENV === "production",
+    sameSite: "lax",
+  });
 
-    // Set new access token cookie
-    res.cookie("access_token", newAccessToken, {
-      httpOnly: true,
-      secure: envVars.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 15 * 60 * 1000, // 15 minutes
-    });
+  res.clearCookie("refresh_token", {
+    httpOnly: true,
+    secure: envVars.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/api/v1/auth/refresh",
+  });
 
-    res.json({
-      success: true,
-      message: "Access token refreshed",
-    });
-  } catch (error: any) {
-    console.error("Refresh token error:", error);
-    res.status(403).json({
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Logged out successfully",
+  });
+});
+
+// Refresh Access Token
+const refreshAccessToken = catchAsync(async (req: Request, res: Response) => {
+  const refreshToken = req.cookies.refresh_token;
+
+  if (!refreshToken) {
+    return sendResponse(res, {
+      statusCode: 401,
       success: false,
-      message: error.message || "Failed to refresh token",
+      message: "Refresh token not found",
     });
   }
-};
 
-const getCurrentUser = async (req: Request, res: Response) => {
-  try {
-    const user = (req as any).user;
+  const newAccessToken = await AuthService.refreshAccessToken(refreshToken);
 
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "Not authenticated",
-      });
-    }
+  res.cookie("access_token", newAccessToken, {
+    httpOnly: true,
+    secure: envVars.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 15 * 60 * 1000,
+  });
 
-    // Get fresh user data from database
-    const freshUser = await AuthService.getCurrentUser(user.userId);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Access token refreshed successfully",
+  });
+});
 
-    if (!freshUser) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
+// Get Current User
+const getCurrentUser = catchAsync(async (req: Request, res: Response) => {
+  const user = (req as any).user;
 
-    res.json({
-      success: true,
-      user: freshUser,
-    });
-  } catch (error) {
-    console.error("Get current user error:", error);
-    res.status(500).json({
+  if (!user) {
+    return sendResponse(res, {
+      statusCode: 401,
       success: false,
-      message: "Failed to get user data",
+      message: "Not authenticated",
     });
   }
-};
+
+  const freshUser = await AuthService.getCurrentUser(user.userId);
+
+  if (!freshUser) {
+    return sendResponse(res, {
+      statusCode: 404,
+      success: false,
+      message: "User not found",
+    });
+  }
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "User fetched successfully",
+    data: freshUser,
+  });
+});
 
 export const AuthController = {
   googleCallback,
