@@ -85,3 +85,52 @@ export interface IRemoveRefreshTokenPayload {
   userId: string;
   refreshToken: string;
 }
+
+
+// Register Payload
+export interface IRegisterPayload {
+  name: string;
+  email: string;
+  password: string;
+}
+
+// Login Payload
+export interface ILoginPayload {
+  email: string;
+  password: string;
+}
+
+
+// ============ Email/Password Auth Types ============
+
+// Register Response
+export interface IRegisterResponse {
+  user: IAuthUserResponse;
+  accessToken: string;
+  refreshToken: string;
+}
+
+// Login Response
+export interface ILoginResponse {
+  user: IAuthUserResponse;
+  accessToken: string;
+  refreshToken: string;
+}
+
+// Change Password Payload
+export interface IChangePasswordPayload {
+  userId: string;
+  currentPassword: string;
+  newPassword: string;
+}
+
+// Forgot Password Payload
+export interface IForgotPasswordPayload {
+  email: string;
+}
+
+// Reset Password Payload
+export interface IResetPasswordPayload {
+  token: string;
+  newPassword: string;
+}

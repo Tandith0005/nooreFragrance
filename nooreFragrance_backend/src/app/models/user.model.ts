@@ -45,6 +45,10 @@ const UserSchema = new Schema<IUser>(
       trim: true,
       lowercase: true,
     },
+    password: {
+      type: String,
+      required: false,
+    },
     photo: {
       type: String,
       default: "",
@@ -66,6 +70,14 @@ const UserSchema = new Schema<IUser>(
       type: Date,
       default: Date.now,
     },
+    resetPasswordToken: {
+      type: String,
+      select: false
+    },
+    resetPasswordExpires: {
+      type: Date,
+      select: false
+    }
   },
   {
     timestamps: true,
